@@ -1,6 +1,5 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("multiplatform")
@@ -26,7 +25,20 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
+                val decomposeVersion = "0.8.0"
+                val kodeinVersion = "7.14.0"
+                val sqliteJdbcVersion = "3.39.2.0"
+                val ktormVersion = "3.5.0"
+
                 implementation(compose.desktop.currentOs)
+
+                implementation("org.kodein.di:kodein-di-framework-compose:$kodeinVersion")
+
+                implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVersion")
+
+                implementation("org.xerial:sqlite-jdbc:$sqliteJdbcVersion")
+                compileOnly("org.ktorm:ktorm-core:$ktormVersion")
             }
         }
         val jvmTest by getting
