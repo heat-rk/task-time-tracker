@@ -1,4 +1,4 @@
-package ru.heatrk.tasktimetracker.presentation.strings
+package ru.heatrk.tasktimetracker.presentation.values.strings
 
 import java.util.*
 
@@ -9,4 +9,8 @@ val strings get() = when(Locale.getDefault().language) {
 
 interface StringsContainer {
     val applicationName: String get() = "Task Time Tracker!"
+    val taskName: String
+    val taskUrl: String
+    val start: String
+    val stop: String
 }
