@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import ru.heatrk.tasktimetracker.domain.models.PomodoroConfig
 import ru.heatrk.tasktimetracker.domain.models.PomodoroState
 import ru.heatrk.tasktimetracker.domain.state_machines.PomodoroStateMachine
-import ru.heatrk.tasktimetracker.domain.usecases.UseCase
+import ru.heatrk.tasktimetracker.domain.usecases.GetPomodoroConfigUseCase
 import ru.heatrk.tasktimetracker.presentation.screens.base.Component
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStartListener
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStopListener
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 
 class PomodoroTimerComponent(
     componentContext: ComponentContext,
-    private val getPomodoroConfigUseCase: UseCase<PomodoroConfig, Unit>,
+    private val getPomodoroConfigUseCase: GetPomodoroConfigUseCase,
     private val timerFormatter: TimerFormatter
 ): Component(componentContext), TimerStartListener, TimerStopListener {
 
@@ -47,7 +47,7 @@ class PomodoroTimerComponent(
 
     init {
         componentScope.launch {
-            _pomodoroConfig = getPomodoroConfigUseCase(Unit)
+            _pomodoroConfig = getPomodoroConfigUseCase()
             _pomodoroStateMachine = PomodoroStateMachine(pomodoroConfig)
 
             remainingTimeInMillis = pomodoroStateMachine.state.value
@@ -124,7 +124,7 @@ class PomodoroTimerComponent(
     companion object {
         fun create(
             args: Args,
-            getPomodoroConfigUseCase: UseCase<PomodoroConfig, Unit>,
+            getPomodoroConfigUseCase: GetPomodoroConfigUseCase,
             timerFormatter: TimerFormatter
         ) = PomodoroTimerComponent(
             componentContext = args.componentContext,
