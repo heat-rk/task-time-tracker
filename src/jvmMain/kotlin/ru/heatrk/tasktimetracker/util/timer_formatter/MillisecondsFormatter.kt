@@ -1,5 +1,5 @@
 package ru.heatrk.tasktimetracker.util.timer_formatter
 
-interface TimerFormatter {
+interface MillisecondsFormatter {
     fun format(millis: Long): String
 }

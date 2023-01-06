@@ -16,6 +16,7 @@ import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.dimens.TextSizeDimens
 import ru.heatrk.tasktimetracker.presentation.values.images.Drawables
 import ru.heatrk.tasktimetracker.presentation.values.strings.strings
+import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
 
 @Composable
 fun TaskTimer(
@@ -41,9 +42,9 @@ fun TaskTimer(
             Spacer(modifier = Modifier.height(InsetsDimens.Default))
 
             TextField(
-                value = state.taskUrl,
-                onValueChange = { onIntent(TaskTimerIntent.OnTaskUrlChange(it)) },
-                label = { Text(text = strings.taskUrl) },
+                value = state.taskDescription,
+                onValueChange = { onIntent(TaskTimerIntent.OnTaskDescriptionChange(it)) },
+                label = { Text(text = strings.taskDescription) },
                 enabled = state.isEnabled,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -52,8 +53,7 @@ fun TaskTimer(
         Spacer(modifier = Modifier.width(InsetsDimens.Default))
 
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(start = InsetsDimens.ExtraLarge)
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val buttonPainter: Painter
             val buttonContentDescription: String
@@ -76,6 +76,7 @@ fun TaskTimer(
             ) {
                 Icon(
                     painter = buttonPainter,
+                    tint = ApplicationTheme.colors.primary,
                     contentDescription = buttonContentDescription
                 )
             }
@@ -93,9 +94,11 @@ fun TaskTimer(
 @Composable
 @Preview
 private fun TaskTimerPreview() {
-    TaskTimer(
-        state = TaskTimerViewState(timePassed = "00:12:45"),
-        onIntent = {},
-        modifier = Modifier.fillMaxWidth()
-    )
+    ApplicationTheme {
+        TaskTimer(
+            state = TaskTimerViewState(timePassed = "00:12:45"),
+            onIntent = {},
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }

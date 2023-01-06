@@ -7,6 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import kotlinx.collections.immutable.persistentListOf
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimer
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerViewState
@@ -14,19 +15,25 @@ import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimer
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerIntent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerViewState
+import ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks.*
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
+import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
+import ru.heatrk.tasktimetracker.util.links.LinksTextValue
 
 @Composable
 fun TrackerScreen(
     taskTimerComponent: TaskTimerComponent,
-    pomodoroTimerComponent: PomodoroTimerComponent
+    pomodoroTimerComponent: PomodoroTimerComponent,
+    trackedTasksComponent: TrackedTasksComponent
 ) {
     val taskTimerViewState by taskTimerComponent.state.collectAsState()
     val pomodoroTimerViewState by pomodoroTimerComponent.state.collectAsState()
+    val trackedTasksViewState by trackedTasksComponent.state.collectAsState()
 
     LaunchedEffect(Unit) {
         taskTimerComponent.addStartListener(pomodoroTimerComponent)
         taskTimerComponent.addStopListener(pomodoroTimerComponent)
+        taskTimerComponent.addTaskStopListener(trackedTasksComponent)
         pomodoroTimerComponent.addStopListener(taskTimerComponent)
         pomodoroTimerComponent.addStateChangedListener(taskTimerComponent)
     }
@@ -34,7 +41,8 @@ fun TrackerScreen(
     TrackerScreen(
         taskTimerViewState = taskTimerViewState,
         onTaskTimerIntent = taskTimerComponent::onIntent,
-        pomodoroTimerViewState = pomodoroTimerViewState
+        pomodoroTimerViewState = pomodoroTimerViewState,
+        trackedTasksViewState = trackedTasksViewState
     )
 }
 
@@ -42,18 +50,19 @@ fun TrackerScreen(
 fun TrackerScreen(
     taskTimerViewState: TaskTimerViewState,
     onTaskTimerIntent: (TaskTimerIntent) -> Unit,
-    pomodoroTimerViewState: PomodoroTimerViewState
+    pomodoroTimerViewState: PomodoroTimerViewState,
+    trackedTasksViewState: TrackedTasksViewState
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
-            .padding(InsetsDimens.Default)
     ) {
         TaskTimer(
             state = taskTimerViewState,
             onIntent = onTaskTimerIntent,
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .padding(horizontal = InsetsDimens.Default)
+                .padding(top = InsetsDimens.Default)
         )
 
         Spacer(modifier = Modifier.height(InsetsDimens.Default))
@@ -62,7 +71,14 @@ fun TrackerScreen(
             state = pomodoroTimerViewState,
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .padding(horizontal = InsetsDimens.Default)
+        )
+
+        TrackedTasks(
+            state = trackedTasksViewState,
+            contentPadding = PaddingValues(all = InsetsDimens.Default),
+            modifier = Modifier
+                .fillMaxWidth()
         )
     }
 }
@@ -70,9 +86,80 @@ fun TrackerScreen(
 @Composable
 @Preview
 private fun TrackerScreenPreview() {
-    TrackerScreen(
-        taskTimerViewState = TaskTimerViewState(timePassed = "00:00:00"),
-        onTaskTimerIntent = {},
-        pomodoroTimerViewState = PomodoroTimerViewState(remainingTime = "00:00")
+    fun link(url: String) = persistentListOf(
+        LinksTextValue.Link(
+            text = url,
+            tag = url,
+            annotation = url
+        )
     )
+
+    val days = persistentListOf(
+        TrackedDayItem(
+            totalTime = "00:28:36",
+            title = "Сегодня",
+            items = listOf(
+                TrackedTaskItem.Entry(
+                    title = "MOBPF-128",
+                    description = link("https://jira.com/MOBPF-128"),
+                    duration = "00:12:36"
+                ),
+                TrackedTaskItem.Group(
+                    title = "MOBPF-130",
+                    description = link("https://jira.com/MOBPF-130"),
+                    duration = "00:16:00",
+                    isEntriesShown = true,
+                    entries = listOf(
+                        TrackedTaskItem.Entry(
+                            title = "MOBPF-130",
+                            description = link("https://jira.com/MOBPF-130"),
+                            duration = "00:09:00"
+                        ),
+                        TrackedTaskItem.Entry(
+                            title = "MOBPF-130",
+                            description = link("https://jira.com/MOBPF-130"),
+                            duration = "00:07:00"
+                        )
+                    )
+                )
+            )
+        ),
+        TrackedDayItem(
+            totalTime = "00:28:36",
+            title = "Вчера",
+            items = listOf(
+                TrackedTaskItem.Entry(
+                    title = "MOBPF-128",
+                    description = link("https://jira.com/MOBPF-128"),
+                    duration = "00:12:36"
+                ),
+                TrackedTaskItem.Group(
+                    title = "MOBPF-130",
+                    description = link("https://jira.com/MOBPF-130"),
+                    duration = "00:16:00",
+                    entries = listOf(
+                        TrackedTaskItem.Entry(
+                            title = "MOBPF-130",
+                            description = link("https://jira.com/MOBPF-130"),
+                            duration = "00:09:00"
+                        ),
+                        TrackedTaskItem.Entry(
+                            title = "MOBPF-130",
+                            description = link("https://jira.com/MOBPF-130"),
+                            duration = "00:07:00"
+                        )
+                    )
+                )
+            )
+        )
+    )
+
+    ApplicationTheme {
+        TrackerScreen(
+            taskTimerViewState = TaskTimerViewState(timePassed = "00:00:00"),
+            onTaskTimerIntent = {},
+            pomodoroTimerViewState = PomodoroTimerViewState(remainingTime = "00:00"),
+            trackedTasksViewState = TrackedTasksViewState.Ok(days)
+        )
+    }
 }

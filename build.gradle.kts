@@ -1,4 +1,3 @@
-import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
@@ -8,6 +7,15 @@ plugins {
 
 group = "ru.heatrk"
 version = "1.0-SNAPSHOT"
+
+val kotlinVersion: String by project
+val kodeinVersion: String by project
+val decomposeVersion: String by project
+val sqliteJdbcVersion: String by project
+val exposedVersion: String by project
+val immutableCollectionsVersion: String by project
+val essentyVersion: String by project
+val coroutinesVersion: String by project
 
 repositories {
     google()
@@ -25,11 +33,6 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                val decomposeVersion = "0.8.0"
-                val kodeinVersion = "7.14.0"
-                val sqliteJdbcVersion = "3.39.2.0"
-                val ktormVersion = "3.5.0"
-
                 implementation(compose.desktop.currentOs)
 
                 implementation("org.kodein.di:kodein-di-framework-compose:$kodeinVersion")
@@ -37,8 +40,16 @@ kotlin {
                 implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
                 implementation("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVersion")
 
+                implementation("com.arkivanov.essenty:parcelable:$essentyVersion")
+
                 implementation("org.xerial:sqlite-jdbc:$sqliteJdbcVersion")
-                compileOnly("org.ktorm:ktorm-core:$ktormVersion")
+                implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+                implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+                implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+
+                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$immutableCollectionsVersion")
+
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:$coroutinesVersion")
             }
         }
         val jvmTest by getting

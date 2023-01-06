@@ -13,12 +13,12 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
-import com.arkivanov.essenty.parcelable.Parcelize
 import org.kodein.di.DI
 import org.kodein.di.instance
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TrackerScreen
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerComponent
+import ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks.TrackedTasksComponent
 
 class DecomposeRouter(
     componentContext: ComponentContext,
@@ -61,14 +61,18 @@ class DecomposeRouter(
             arg = PomodoroTimerComponent.Args(componentContext = componentContext)
         )
 
+        val trackedTasksComponent by di.instance<TrackedTasksComponent.Args, TrackedTasksComponent>(
+            arg = TrackedTasksComponent.Args(componentContext = componentContext)
+        )
+
         TrackerScreen(
             taskTimerComponent = taskTimerComponent,
-            pomodoroTimerComponent = pomodoroTimerComponent
+            pomodoroTimerComponent = pomodoroTimerComponent,
+            trackedTasksComponent = trackedTasksComponent
         )
     }
 
     private sealed class Config: Parcelable {
-        @Parcelize
         object Tracker: Config()
     }
 }

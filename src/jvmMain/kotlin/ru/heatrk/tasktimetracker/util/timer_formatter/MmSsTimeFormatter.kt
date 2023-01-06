@@ -2,7 +2,7 @@ package ru.heatrk.tasktimetracker.util.timer_formatter
 
 import java.util.concurrent.TimeUnit
 
-class MinutesCountdownTimerFormatter: TimerFormatter {
+class MmSsTimeFormatter: MillisecondsFormatter {
     override fun format(millis: Long): String {
         val seconds = TimeUnit.MILLISECONDS.toSeconds(millis)
 

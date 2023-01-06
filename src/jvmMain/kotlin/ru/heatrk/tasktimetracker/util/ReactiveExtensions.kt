@@ -1,6 +1,7 @@
 package ru.heatrk.tasktimetracker.util
 
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlin.math.abs
 
@@ -35,4 +36,14 @@ fun fromToTickerFlow(
         emit(value)
         delay(period)
     }
+}
+
+inline fun <reified T: Any> StateFlow<*>.requireValueOfType(): T {
+    val state = value
+
+    if (state !is T) {
+        throw IllegalStateException("${T::class.simpleName} StateFlow value type required!")
+    }
+
+    return state
 }

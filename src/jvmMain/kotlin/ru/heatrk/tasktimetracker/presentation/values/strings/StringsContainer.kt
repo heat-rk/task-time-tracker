@@ -10,7 +10,8 @@ val strings get() = when(Locale.getDefault().language) {
 interface StringsContainer {
     val applicationName: String get() = "Task Time Tracker!"
     val taskName: String
-    val taskUrl: String
+    val taskDescription: String
     val start: String
     val stop: String
+    val trackedTasksIsEmpty: String
 }

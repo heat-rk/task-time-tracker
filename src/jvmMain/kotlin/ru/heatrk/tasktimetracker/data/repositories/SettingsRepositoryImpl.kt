@@ -7,9 +7,9 @@ import java.time.Duration
 class SettingsRepositoryImpl: SettingsRepository {
     override suspend fun getPomodoroConfig(): PomodoroConfig {
         return PomodoroConfig(
-            workingDuration = Duration.ofMinutes(30),
-            shortChillDuration = Duration.ofMinutes(8),
-            longChillDuration = Duration.ofMinutes(15),
+            workingDuration = Duration.ofSeconds(15),
+            shortChillDuration = Duration.ofSeconds(5),
+            longChillDuration = Duration.ofSeconds(10),
             longChillPomodorosCount = 2
         )
     }

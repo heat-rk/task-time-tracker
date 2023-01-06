@@ -13,13 +13,13 @@ import ru.heatrk.tasktimetracker.presentation.screens.base.Component
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStartListener
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStopListener
 import ru.heatrk.tasktimetracker.util.fromToTickerFlow
-import ru.heatrk.tasktimetracker.util.timer_formatter.TimerFormatter
+import ru.heatrk.tasktimetracker.util.timer_formatter.MillisecondsFormatter
 import java.util.concurrent.TimeUnit
 
 class PomodoroTimerComponent(
     componentContext: ComponentContext,
     private val getPomodoroConfigUseCase: GetPomodoroConfigUseCase,
-    private val timerFormatter: TimerFormatter
+    private val timerFormatter: MillisecondsFormatter
 ): Component(componentContext), TimerStartListener, TimerStopListener {
 
     private var timerJob: Job? = null
@@ -125,7 +125,7 @@ class PomodoroTimerComponent(
         fun create(
             args: Args,
             getPomodoroConfigUseCase: GetPomodoroConfigUseCase,
-            timerFormatter: TimerFormatter
+            timerFormatter: MillisecondsFormatter
         ) = PomodoroTimerComponent(
             componentContext = args.componentContext,
             getPomodoroConfigUseCase = getPomodoroConfigUseCase,

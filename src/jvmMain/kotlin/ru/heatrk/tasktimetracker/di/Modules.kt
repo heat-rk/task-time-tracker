@@ -6,5 +6,6 @@ val modules = arrayOf(
     componentsModule,
     utilsModule,
     repositoriesModule,
-    useCasesModule
+    useCasesModule,
+    dispatchersModule
 )
