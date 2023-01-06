@@ -30,7 +30,8 @@ val componentsModule = DI.Module("componentsModule") {
             trackedTasksRepository = instance(),
             totalTimeFormatter = hhMmSsTimeFormatterInstance(),
             dateFormatter = dateFormatterInstance(),
-            textToLinkTextConverter = instance()
+            textToLinkTextConverter = instance(),
+            defaultDispatcher = defaultDispatcherInstance()
         )
     }
 }

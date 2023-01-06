@@ -2,20 +2,24 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.heatrk.tasktimetracker.domain.models.TrackedTask
 import ru.heatrk.tasktimetracker.domain.repositories.TrackedTasksRepository
 import ru.heatrk.tasktimetracker.presentation.screens.base.Component
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TaskStopListener
 import ru.heatrk.tasktimetracker.presentation.values.strings.strings
 import ru.heatrk.tasktimetracker.util.links.TextToLinkTextConverter
+import ru.heatrk.tasktimetracker.util.requireValueOfType
 import ru.heatrk.tasktimetracker.util.timer_formatter.MillisecondsFormatter
 import java.time.format.DateTimeFormatter
 
 class TrackedTasksComponent(
     componentContext: ComponentContext,
+    private val defaultDispatcher: CoroutineDispatcher,
     private val trackedTasksRepository: TrackedTasksRepository,
     private val totalTimeFormatter: MillisecondsFormatter,
     private val dateFormatter: DateTimeFormatter,
@@ -28,6 +32,14 @@ class TrackedTasksComponent(
     init {
         componentScope.launch {
             updateTrackedTasks()
+        }
+    }
+
+    fun onIntent(intent: TrackedTasksIntent) = componentScope.launch {
+        when (intent) {
+            is TrackedTasksIntent.OnItemClick -> {
+                onItemClick(intent.item)
+            }
         }
     }
 
@@ -48,32 +60,62 @@ class TrackedTasksComponent(
         }
     }
 
-    private suspend fun mapTasksToDayItems(tasks: List<TrackedTask>) = tasks
-        .groupBy { it.startAt.toLocalDate() }
-        .map { entry ->
-            val dayTotalTime = entry.value.sumOf { task -> task.duration.toMillis() }
+    private suspend fun onItemClick(item: TrackedTasksListItem) = withContext(defaultDispatcher) {
+        when (item) {
+            is TrackedTasksListItem.Entry -> {
 
-            val items = mutableListOf(mutableListOf<TrackedTask>())
-
-            entry.value.forEachIndexed { index, item ->
-                if (index == 0 || shouldBeGrouped(entry.value[index - 1], item)) {
-                    items.last().add(item)
-                } else {
-                    items.add(mutableListOf())
-                    items.last().add(item)
-                }
             }
 
-            TrackedDayItem(
-                totalTime = totalTimeFormatter.format(dayTotalTime),
-                title = entry.key.format(dateFormatter),
-                items = items.map { mapTasksToGroupItems(it) }
-            )
-        }.toImmutableList()
+            is TrackedTasksListItem.Group -> {
+                val state = state.requireValueOfType<TrackedTasksViewState.Ok>()
 
-    private suspend fun mapTasksToGroupItems(tasks: List<TrackedTask>): TrackedTaskItem {
+                _state.value = state.copy(
+                    items = state.items.map { day ->
+                        day.copy(
+                            items = day.items.map { other ->
+                                if (other.key == item.key) {
+                                    item.copy(isEntriesShown = !item.isEntriesShown)
+                                } else {
+                                    other
+                                }
+                            }.toImmutableList()
+                        )
+                    }.toImmutableList()
+                )
+            }
+        }
+    }
+
+    private suspend fun mapTasksToDayItems(tasks: List<TrackedTask>) = withContext(defaultDispatcher) {
+        tasks
+            .groupBy { it.startAt.toLocalDate() }
+            .map { entry ->
+                val dayTotalTime = entry.value.sumOf { task -> task.duration.toMillis() }
+
+                val items = mutableListOf(mutableListOf<TrackedTask>())
+
+                entry.value.forEachIndexed { index, item ->
+                    if (index == 0 || shouldBeGrouped(entry.value[index - 1], item)) {
+                        items.last().add(item)
+                    } else {
+                        items.add(mutableListOf())
+                        items.last().add(item)
+                    }
+                }
+
+                TrackedDayItem(
+                    totalTime = totalTimeFormatter.format(dayTotalTime),
+                    title = entry.key.format(dateFormatter),
+                    items = items.map { mapTasksToGroupItems(it) }.toImmutableList()
+                )
+            }.toImmutableList()
+    }
+
+    private suspend fun mapTasksToGroupItems(tasks: List<TrackedTask>): TrackedTasksListItem {
         val entries = tasks.map {
-            TrackedTaskItem.Entry(
+            TrackedTasksListItem.Entry(
+                key = it.id.toString(),
+                localDate = it.startAt.toLocalDate(),
                 title = it.title.ifBlank { "-" },
                 duration = totalTimeFormatter.format(it.duration.toMillis()),
                 description = textToLinkTextConverter.convert(it.description.ifBlank { "-" })
@@ -85,11 +127,12 @@ class TrackedTasksComponent(
         } else if (tasks.size > 1) {
             val groupTotalTime = tasks.sumOf { task -> task.duration.toMillis() }
 
-            TrackedTaskItem.Group(
+            TrackedTasksListItem.Group(
+                localDate = entries[0].localDate,
                 title = entries[0].title,
                 duration = totalTimeFormatter.format(groupTotalTime),
                 description = entries[0].description,
-                entries = entries
+                entries = entries.toImmutableList()
             )
         } else {
             throw IllegalArgumentException("tasks argument can't be empty list!")
@@ -109,13 +152,15 @@ class TrackedTasksComponent(
             trackedTasksRepository: TrackedTasksRepository,
             totalTimeFormatter: MillisecondsFormatter,
             dateFormatter: DateTimeFormatter,
-            textToLinkTextConverter: TextToLinkTextConverter
+            textToLinkTextConverter: TextToLinkTextConverter,
+            defaultDispatcher: CoroutineDispatcher
         ) = TrackedTasksComponent(
             componentContext = args.componentContext,
             trackedTasksRepository = trackedTasksRepository,
             totalTimeFormatter = totalTimeFormatter,
             dateFormatter = dateFormatter,
-            textToLinkTextConverter = textToLinkTextConverter
+            textToLinkTextConverter = textToLinkTextConverter,
+            defaultDispatcher = defaultDispatcher
         )
     }
 }

@@ -1,46 +1,64 @@
 package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Divider
-import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.persistentListOf
-import ru.heatrk.tasktimetracker.presentation.custom_composables.links_text.LinksText
-import ru.heatrk.tasktimetracker.presentation.values.dimens.ElementsDimens
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
+import ru.heatrk.tasktimetracker.util.onlyBottomCorners
+import java.time.LocalDate
 
 @Composable
 fun TrackedTasks(
     state: TrackedTasksViewState,
+    onIntent: (TrackedTasksIntent) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     modifier: Modifier = Modifier
 ) {
     when (state) {
-        is TrackedTasksViewState.Ok -> TrackedTasksOkState(state, contentPadding, modifier)
-        is TrackedTasksViewState.Error -> TrackedTasksErrorState(state, modifier)
-        TrackedTasksViewState.Loading -> TrackedTasksLoadingState(modifier)
+        is TrackedTasksViewState.Ok -> {
+            TrackedTasksOkState(
+                state = state,
+                onIntent = onIntent,
+                contentPadding = contentPadding,
+                modifier = modifier
+            )
+        }
+
+        is TrackedTasksViewState.Error -> {
+            TrackedTasksErrorState(
+                error = state,
+                modifier = modifier
+            )
+        }
+
+        TrackedTasksViewState.Loading -> {
+            TrackedTasksLoadingState(
+                modifier = modifier
+            )
+        }
     }
 }
 
 @Composable
 private fun TrackedTasksOkState(
     state: TrackedTasksViewState.Ok,
+    onIntent: (TrackedTasksIntent) -> Unit,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     modifier: Modifier = Modifier
 ) {
@@ -48,14 +66,34 @@ private fun TrackedTasksOkState(
         contentPadding = contentPadding,
         modifier = modifier
     ) {
-        itemsIndexed(state.days) {index, trackedDay ->
-            TrackedDay(
-                dayItem = trackedDay,
-                modifier = Modifier.fillMaxWidth()
-            )
+        state.items.forEach { day ->
+            item(key = day.title) {
+                TrackedTasksDayHeader(
+                    dateTitle = day.title,
+                    totalTime = day.totalTime,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-            if (index != state.days.lastIndex) {
-                Spacer(modifier = Modifier.height(InsetsDimens.Default))
+            day.items.forEachIndexed { taskIndex, task ->
+                when (task) {
+                    is TrackedTasksListItem.Entry -> {
+                        entryItem(
+                            day = day,
+                            item = task,
+                            position = taskIndex,
+                            onIntent = onIntent
+                        )
+                    }
+                    is TrackedTasksListItem.Group -> {
+                        groupItem(
+                            day = day,
+                            item = task,
+                            position = taskIndex,
+                            onIntent = onIntent
+                        )
+                    }
+                }
             }
         }
     }
@@ -86,123 +124,92 @@ private fun TrackedTasksLoadingState(
     }
 }
 
-@Composable
-private fun TrackedDay(
-    dayItem: TrackedDayItem,
-    modifier: Modifier = Modifier
+private fun LazyListScope.entryItem(
+    day: TrackedDayItem,
+    item: TrackedTasksListItem.Entry,
+    position: Int,
+    onIntent: (TrackedTasksIntent) -> Unit
 ) {
-    Surface(
-        modifier = modifier,
-        shape = ApplicationTheme.shapes.medium
-    ) {
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(InsetsDimens.Default)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = dayItem.title, fontWeight = FontWeight.Bold)
-                Text(text = dayItem.totalTime, fontWeight = FontWeight.Bold)
-            }
+    item(key =  item.key, contentType = item.contentType) {
+        TrackedTasksEntry(
+            item = item,
+            shape = getShape(
+                items = day.items,
+                item = item,
+                position = position
+            ),
+            onClick = { onIntent(TrackedTasksIntent.OnItemClick(item)) },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
 
-            Spacer(modifier = Modifier.height(InsetsDimens.ExtraLarge))
+private fun LazyListScope.groupItem(
+    day: TrackedDayItem,
+    item: TrackedTasksListItem.Group,
+    position: Int,
+    onIntent: (TrackedTasksIntent) -> Unit
+) {
+    item(key =  item.key, contentType = item.contentType) {
+        TrackedTasksGroup(
+            item = item,
+            counterValue = item.entries.size,
+            isSelected = item.isEntriesShown,
+            shape = getShape(
+                items = day.items,
+                item = item,
+                position = position
+            ),
+            onClick = { onIntent(TrackedTasksIntent.OnItemClick(item)) },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 
-            dayItem.items.forEachIndexed { index, item ->
-                TrackedTaskEntry(
-                    task = item,
-                    isLast = index == dayItem.items.lastIndex,
-                    modifier = Modifier.fillMaxWidth()
+
+    if (item.isEntriesShown) {
+        itemsIndexed(
+            items = item.entries,
+            key = { _, innerItem ->  innerItem.key },
+            contentType = { _, innerItem -> innerItem.contentType }
+        ) { innerPosition, innerItem ->
+            val shape = if (innerPosition == day.items.lastIndex) {
+                getShape(
+                    items = item.entries,
+                    item = innerItem,
+                    position = innerPosition
                 )
+            } else {
+                RectangleShape
             }
+
+            TrackedTasksEntry(
+                item = innerItem,
+                isInner = true,
+                shape = shape,
+                onClick = { onIntent(TrackedTasksIntent.OnItemClick(innerItem)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
 @Composable
-private fun TrackedTaskEntry(
-    task: TrackedTaskItem,
-    isLast: Boolean = false,
-    contentStartPadding: Dp = 0.dp,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = InsetsDimens.Default,
-                    bottom = InsetsDimens.Default,
-                    start = contentStartPadding
-                )
-        ) {
-            if (task is TrackedTaskItem.Group) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(ElementsDimens.EntriesGroupCounterSize)
-                        .background(
-                            shape = ApplicationTheme.shapes.medium,
-                            color = if (task.isEntriesShown) {
-                                ApplicationTheme.colors.primary
-                            } else {
-                                Color.Transparent
-                            }
-                        )
-                        .border(
-                            shape = ApplicationTheme.shapes.medium,
-                            color = if (task.isEntriesShown) {
-                                Color.Transparent
-                            } else {
-                                ApplicationTheme.colors.primary
-                            },
-                            width = ElementsDimens.BorderWidth
-                        )
-                ) {
-                    Text(
-                        text = task.entries.size.toString(),
-                        color = if (task.isEntriesShown) {
-                            ApplicationTheme.colors.onPrimary
-                        } else {
-                            ApplicationTheme.colors.onSurface
-                        }
-                    )
-                }
+private fun getShape(
+    items: List<TrackedTasksListItem>,
+    item: TrackedTasksListItem,
+    position: Int
+): Shape {
+    var isBottom = position == items.lastIndex ||
+            items[position + 1].localDate != item.localDate
 
-                Spacer(Modifier.width(InsetsDimens.Default))
-            }
+    if (item is TrackedTasksListItem.Group) {
+        isBottom = if (item.isEntriesShown) false else isBottom
+    }
 
-            Column(modifier = Modifier.weight(1f)) {
-                SelectionContainer {
-                    Text(text = task.title)
-                }
-
-                SelectionContainer {
-                    LinksText(task.description)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(InsetsDimens.Default))
-
-            Text(text = task.duration)
-        }
-
-        if (!isLast || (task is TrackedTaskItem.Group && task.isEntriesShown)) {
-            Divider(modifier = Modifier.fillMaxWidth())
-        }
-
-        if (task is TrackedTaskItem.Group && task.isEntriesShown) {
-            task.entries.forEachIndexed { index, item ->
-                TrackedTaskEntry(
-                    task = item,
-                    isLast = index == task.entries.lastIndex,
-                    contentStartPadding = ElementsDimens.EntriesGroupCounterSize + InsetsDimens.Default,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
+    return if (isBottom) {
+        ApplicationTheme.shapes.medium.onlyBottomCorners
+    } else {
+        RectangleShape
     }
 }
 
@@ -221,24 +228,31 @@ private fun TrackedTasksPreview() {
         TrackedDayItem(
             totalTime = "00:28:36",
             title = "Сегодня",
-            items = listOf(
-                TrackedTaskItem.Entry(
+            items = persistentListOf(
+                TrackedTasksListItem.Entry(
+                    key = "1",
+                    localDate = LocalDate.now(),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
-                TrackedTaskItem.Group(
+                TrackedTasksListItem.Group(
                     title = "MOBPF-130",
+                    localDate = LocalDate.now(),
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
                     isEntriesShown = true,
-                    entries = listOf(
-                        TrackedTaskItem.Entry(
+                    entries = persistentListOf(
+                        TrackedTasksListItem.Entry(
+                            key = "2",
+                            localDate = LocalDate.now(),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
-                        TrackedTaskItem.Entry(
+                        TrackedTasksListItem.Entry(
+                            key = "3",
+                            localDate = LocalDate.now(),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -250,23 +264,30 @@ private fun TrackedTasksPreview() {
         TrackedDayItem(
             totalTime = "00:28:36",
             title = "Вчера",
-            items = listOf(
-                TrackedTaskItem.Entry(
+            items = persistentListOf(
+                TrackedTasksListItem.Entry(
+                    key = "4",
+                    localDate = LocalDate.now().minusDays(1),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
-                TrackedTaskItem.Group(
+                TrackedTasksListItem.Group(
+                    localDate = LocalDate.now().minusDays(1),
                     title = "MOBPF-130",
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
-                    entries = listOf(
-                        TrackedTaskItem.Entry(
+                    entries = persistentListOf(
+                        TrackedTasksListItem.Entry(
+                            key = "5",
+                            localDate = LocalDate.now().minusDays(1),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
-                        TrackedTaskItem.Entry(
+                        TrackedTasksListItem.Entry(
+                            key = "6",
+                            localDate = LocalDate.now().minusDays(1),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -280,6 +301,7 @@ private fun TrackedTasksPreview() {
     ApplicationTheme {
         TrackedTasks(
             state = TrackedTasksViewState.Ok(days),
+            onIntent = {},
             modifier = Modifier.fillMaxWidth()
         )
     }

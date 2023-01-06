@@ -19,6 +19,7 @@ import ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks.*
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
+import java.time.LocalDate
 
 @Composable
 fun TrackerScreen(
@@ -42,7 +43,8 @@ fun TrackerScreen(
         taskTimerViewState = taskTimerViewState,
         onTaskTimerIntent = taskTimerComponent::onIntent,
         pomodoroTimerViewState = pomodoroTimerViewState,
-        trackedTasksViewState = trackedTasksViewState
+        trackedTasksViewState = trackedTasksViewState,
+        onTrackedTasksIntent = trackedTasksComponent::onIntent
     )
 }
 
@@ -51,7 +53,8 @@ fun TrackerScreen(
     taskTimerViewState: TaskTimerViewState,
     onTaskTimerIntent: (TaskTimerIntent) -> Unit,
     pomodoroTimerViewState: PomodoroTimerViewState,
-    trackedTasksViewState: TrackedTasksViewState
+    trackedTasksViewState: TrackedTasksViewState,
+    onTrackedTasksIntent: (TrackedTasksIntent) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -76,6 +79,7 @@ fun TrackerScreen(
 
         TrackedTasks(
             state = trackedTasksViewState,
+            onIntent = onTrackedTasksIntent,
             contentPadding = PaddingValues(all = InsetsDimens.Default),
             modifier = Modifier
                 .fillMaxWidth()
@@ -98,24 +102,31 @@ private fun TrackerScreenPreview() {
         TrackedDayItem(
             totalTime = "00:28:36",
             title = "Сегодня",
-            items = listOf(
-                TrackedTaskItem.Entry(
+            items = persistentListOf(
+                TrackedTasksListItem.Entry(
+                    key = "1",
+                    localDate = LocalDate.now(),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
-                TrackedTaskItem.Group(
+                TrackedTasksListItem.Group(
                     title = "MOBPF-130",
+                    localDate = LocalDate.now(),
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
                     isEntriesShown = true,
-                    entries = listOf(
-                        TrackedTaskItem.Entry(
+                    entries = persistentListOf(
+                        TrackedTasksListItem.Entry(
+                            key = "2",
+                            localDate = LocalDate.now(),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
-                        TrackedTaskItem.Entry(
+                        TrackedTasksListItem.Entry(
+                            key = "3",
+                            localDate = LocalDate.now(),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -127,23 +138,30 @@ private fun TrackerScreenPreview() {
         TrackedDayItem(
             totalTime = "00:28:36",
             title = "Вчера",
-            items = listOf(
-                TrackedTaskItem.Entry(
+            items = persistentListOf(
+                TrackedTasksListItem.Entry(
+                    key = "4",
+                    localDate = LocalDate.now().minusDays(1),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
-                TrackedTaskItem.Group(
+                TrackedTasksListItem.Group(
+                    localDate = LocalDate.now().minusDays(1),
                     title = "MOBPF-130",
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
-                    entries = listOf(
-                        TrackedTaskItem.Entry(
+                    entries = persistentListOf(
+                        TrackedTasksListItem.Entry(
+                            key = "5",
+                            localDate = LocalDate.now().minusDays(1),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
-                        TrackedTaskItem.Entry(
+                        TrackedTasksListItem.Entry(
+                            key = "6",
+                            localDate = LocalDate.now().minusDays(1),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -159,7 +177,8 @@ private fun TrackerScreenPreview() {
             taskTimerViewState = TaskTimerViewState(timePassed = "00:00:00"),
             onTaskTimerIntent = {},
             pomodoroTimerViewState = PomodoroTimerViewState(remainingTime = "00:00"),
-            trackedTasksViewState = TrackedTasksViewState.Ok(days)
+            trackedTasksViewState = TrackedTasksViewState.Ok(days),
+            onTrackedTasksIntent = {}
         )
     }
 }
