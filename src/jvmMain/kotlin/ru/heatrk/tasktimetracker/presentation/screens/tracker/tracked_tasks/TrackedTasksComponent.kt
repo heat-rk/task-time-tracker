@@ -14,15 +14,15 @@ import ru.heatrk.tasktimetracker.presentation.screens.tracker.TaskStopListener
 import ru.heatrk.tasktimetracker.presentation.values.strings.strings
 import ru.heatrk.tasktimetracker.util.links.TextToLinkTextConverter
 import ru.heatrk.tasktimetracker.util.requireValueOfType
-import ru.heatrk.tasktimetracker.util.timer_formatter.MillisecondsFormatter
-import java.time.format.DateTimeFormatter
+import ru.heatrk.tasktimetracker.util.time_formatter.local_date.LocalDateFormatter
+import ru.heatrk.tasktimetracker.util.time_formatter.millis.MillisecondsFormatter
 
 class TrackedTasksComponent(
     componentContext: ComponentContext,
     private val defaultDispatcher: CoroutineDispatcher,
     private val trackedTasksRepository: TrackedTasksRepository,
     private val totalTimeFormatter: MillisecondsFormatter,
-    private val dateFormatter: DateTimeFormatter,
+    private val dateFormatter: LocalDateFormatter,
     private val textToLinkTextConverter: TextToLinkTextConverter
 ): Component(componentContext), TaskStopListener {
 
@@ -105,7 +105,7 @@ class TrackedTasksComponent(
 
                 TrackedDayItem(
                     totalTime = totalTimeFormatter.format(dayTotalTime),
-                    title = entry.key.format(dateFormatter),
+                    title = dateFormatter.format(entry.key),
                     items = items.map { mapTasksToGroupItems(it) }.toImmutableList()
                 )
             }.toImmutableList()
@@ -151,7 +151,7 @@ class TrackedTasksComponent(
             args: Args,
             trackedTasksRepository: TrackedTasksRepository,
             totalTimeFormatter: MillisecondsFormatter,
-            dateFormatter: DateTimeFormatter,
+            dateFormatter: LocalDateFormatter,
             textToLinkTextConverter: TextToLinkTextConverter,
             defaultDispatcher: CoroutineDispatcher
         ) = TrackedTasksComponent(

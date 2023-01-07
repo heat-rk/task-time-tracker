@@ -14,4 +14,6 @@ interface StringsContainer {
     val start: String
     val stop: String
     val trackedTasksIsEmpty: String
+    val today: String
+    val yesterday: String
 }

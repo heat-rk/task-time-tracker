@@ -13,14 +13,11 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.persistentListOf
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
-import ru.heatrk.tasktimetracker.util.onlyBottomCorners
 import java.time.LocalDate
 
 @Composable
@@ -133,7 +130,7 @@ private fun LazyListScope.entryItem(
     item(key =  item.key, contentType = item.contentType) {
         TrackedTasksEntry(
             item = item,
-            shape = getShape(
+            isBottom = isBottom(
                 items = day.items,
                 item = item,
                 position = position
@@ -155,7 +152,7 @@ private fun LazyListScope.groupItem(
             item = item,
             counterValue = item.entries.size,
             isSelected = item.isEntriesShown,
-            shape = getShape(
+            isBottom = isBottom(
                 items = day.items,
                 item = item,
                 position = position
@@ -172,20 +169,20 @@ private fun LazyListScope.groupItem(
             key = { _, innerItem ->  innerItem.key },
             contentType = { _, innerItem -> innerItem.contentType }
         ) { innerPosition, innerItem ->
-            val shape = if (innerPosition == day.items.lastIndex) {
-                getShape(
+            val isBottom = if (innerPosition == day.items.lastIndex) {
+                isBottom(
                     items = item.entries,
                     item = innerItem,
                     position = innerPosition
                 )
             } else {
-                RectangleShape
+                false
             }
 
             TrackedTasksEntry(
                 item = innerItem,
                 isInner = true,
-                shape = shape,
+                isBottom = isBottom,
                 onClick = { onIntent(TrackedTasksIntent.OnItemClick(innerItem)) },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -193,12 +190,11 @@ private fun LazyListScope.groupItem(
     }
 }
 
-@Composable
-private fun getShape(
+private fun isBottom(
     items: List<TrackedTasksListItem>,
     item: TrackedTasksListItem,
     position: Int
-): Shape {
+): Boolean {
     var isBottom = position == items.lastIndex ||
             items[position + 1].localDate != item.localDate
 
@@ -206,11 +202,7 @@ private fun getShape(
         isBottom = if (item.isEntriesShown) false else isBottom
     }
 
-    return if (isBottom) {
-        ApplicationTheme.shapes.medium.onlyBottomCorners
-    } else {
-        RectangleShape
-    }
+    return isBottom
 }
 
 @Preview

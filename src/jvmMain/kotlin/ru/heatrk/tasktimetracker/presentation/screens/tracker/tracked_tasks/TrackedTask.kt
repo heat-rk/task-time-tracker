@@ -2,25 +2,23 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ru.heatrk.tasktimetracker.presentation.custom_composables.divider_surface.DividerSurface
 import ru.heatrk.tasktimetracker.presentation.custom_composables.links_text.LinksText
 import ru.heatrk.tasktimetracker.presentation.values.dimens.ElementsDimens
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
+import ru.heatrk.tasktimetracker.util.onlyBottomCorners
 import ru.heatrk.tasktimetracker.util.onlyTopCorners
 
 @Composable
@@ -43,18 +41,22 @@ fun TrackedTasksDayHeader(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TrackedTasksGroup(
     item: TrackedTasksListItem.Group,
     counterValue: Int,
     onClick: () -> Unit,
     isSelected: Boolean = false,
-    shape: Shape = RectangleShape,
+    isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = shape,
+    DividerSurface(
+        shape = if (isBottom) {
+            ApplicationTheme.shapes.medium.onlyBottomCorners
+        } else {
+            RectangleShape
+        },
+        isDividerVisible = !isBottom,
         onClick = onClick,
         modifier = modifier
     ) {
@@ -113,17 +115,21 @@ fun TrackedTasksGroup(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TrackedTasksEntry(
     item: TrackedTasksListItem.Entry,
     isInner: Boolean = false,
     onClick: () -> Unit,
-    shape: Shape = RectangleShape,
+    isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = shape,
+    DividerSurface(
+        shape = if (isBottom) {
+            ApplicationTheme.shapes.medium.onlyBottomCorners
+        } else {
+            RectangleShape
+        },
+        isDividerVisible = !isBottom,
         onClick = onClick,
         modifier = modifier
     ) {

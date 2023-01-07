@@ -1,4 +1,4 @@
-package ru.heatrk.tasktimetracker.util.timer_formatter
+package ru.heatrk.tasktimetracker.util.time_formatter.millis
 
 import java.util.concurrent.TimeUnit
 

@@ -13,7 +13,7 @@ import ru.heatrk.tasktimetracker.presentation.screens.base.Component
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStartListener
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStopListener
 import ru.heatrk.tasktimetracker.util.fromToTickerFlow
-import ru.heatrk.tasktimetracker.util.timer_formatter.MillisecondsFormatter
+import ru.heatrk.tasktimetracker.util.time_formatter.millis.MillisecondsFormatter
 import java.util.concurrent.TimeUnit
 
 class PomodoroTimerComponent(
