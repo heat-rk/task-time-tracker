@@ -1,36 +1,45 @@
 package ru.heatrk.tasktimetracker.presentation.custom_composables.links_text
 
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
+import ru.heatrk.tasktimetracker.presentation.custom_composables.clickable_text.ClickableText
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
 
 @Composable
 fun LinksText(
     value: List<LinksTextValue>,
+    onMissClick: ((Offset) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val annotatedString = createAnnotatedString(value)
 
     ClickableText(
         text = annotatedString,
-        onClick = { offset ->
+        onClick = { offset, charOffset ->
+            var isClicked = false
+
             value.forEach { annotatedStringData ->
                 if (annotatedStringData is LinksTextValue.Link) {
                     annotatedString.getStringAnnotations(
                         tag = annotatedStringData.tag,
-                        start = offset,
-                        end = offset,
+                        start = charOffset,
+                        end = charOffset,
                     ).firstOrNull()?.let {
+                        isClicked = true
                         annotatedStringData.onClick?.invoke()
                     }
                 }
+            }
+
+            if (!isClicked) {
+                onMissClick?.invoke(offset)
             }
         },
         modifier = modifier,

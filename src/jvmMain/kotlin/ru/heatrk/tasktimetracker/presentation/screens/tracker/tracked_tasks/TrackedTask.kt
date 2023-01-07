@@ -2,22 +2,26 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import ru.heatrk.tasktimetracker.presentation.custom_composables.divider_surface.DividerSurface
 import ru.heatrk.tasktimetracker.presentation.custom_composables.links_text.LinksText
 import ru.heatrk.tasktimetracker.presentation.values.dimens.ElementsDimens
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
+import ru.heatrk.tasktimetracker.util.emitClick
 import ru.heatrk.tasktimetracker.util.onlyBottomCorners
 import ru.heatrk.tasktimetracker.util.onlyTopCorners
 
@@ -50,6 +54,9 @@ fun TrackedTasksGroup(
     isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val coroutineScope = rememberCoroutineScope()
+
     DividerSurface(
         shape = if (isBottom) {
             ApplicationTheme.shapes.medium.onlyBottomCorners
@@ -58,6 +65,7 @@ fun TrackedTasksGroup(
         },
         isDividerVisible = !isBottom,
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
     ) {
         Row(
@@ -99,13 +107,17 @@ fun TrackedTasksGroup(
             Spacer(Modifier.width(InsetsDimens.Default))
 
             Column(modifier = Modifier.weight(1f)) {
-                SelectionContainer {
-                    Text(text = item.title)
-                }
+                Text(text = item.title)
 
-                SelectionContainer {
-                    LinksText(item.description)
-                }
+                LinksText(
+                    value = item.description,
+                    onMissClick = {
+                        coroutineScope.launch {
+                            interactionSource.emitClick(it)
+                            onClick()
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(InsetsDimens.Default))
@@ -123,6 +135,9 @@ fun TrackedTasksEntry(
     isBottom: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val coroutineScope = rememberCoroutineScope()
+
     DividerSurface(
         shape = if (isBottom) {
             ApplicationTheme.shapes.medium.onlyBottomCorners
@@ -131,6 +146,7 @@ fun TrackedTasksEntry(
         },
         isDividerVisible = !isBottom,
         onClick = onClick,
+        interactionSource = interactionSource,
         modifier = modifier
     ) {
         Row(
@@ -146,13 +162,17 @@ fun TrackedTasksEntry(
                 )
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                SelectionContainer {
-                    Text(text = item.title)
-                }
+                Text(text = item.title)
 
-                SelectionContainer {
-                    LinksText(item.description)
-                }
+                LinksText(
+                    value = item.description,
+                    onMissClick = {
+                        coroutineScope.launch {
+                            interactionSource.emitClick(it)
+                            onClick()
+                        }
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(InsetsDimens.Default))

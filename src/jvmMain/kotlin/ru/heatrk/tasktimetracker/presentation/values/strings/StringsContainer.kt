@@ -4,6 +4,7 @@ import java.util.*
 
 val strings get() = when(Locale.getDefault().language) {
     "ru" -> StringContainerRu
+    "en" -> StringContainerEn
     else -> StringContainerRu
 }
 
