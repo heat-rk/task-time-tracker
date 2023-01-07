@@ -4,6 +4,7 @@ import org.kodein.di.DI
 import org.kodein.di.DirectDIAware
 import org.kodein.di.bindProvider
 import org.kodein.di.instance
+import ru.heatrk.tasktimetracker.util.app_data.AppDataDirectoryProvider
 import ru.heatrk.tasktimetracker.util.links.LinkClickHandler
 import ru.heatrk.tasktimetracker.util.links.LinkClickHandlerImpl
 import ru.heatrk.tasktimetracker.util.links.TextToLinkTextConverter
@@ -34,6 +35,8 @@ val utilsModule = DI.Module("utilsModule") {
             linkClickHandler = instance()
         )
     }
+
+    bindProvider { AppDataDirectoryProvider.create() }
 }
 
 fun DirectDIAware.hhMmSsTimeFormatterInstance() =
