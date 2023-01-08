@@ -92,21 +92,13 @@ class TrackedTasksComponent(
             .map { entry ->
                 val dayTotalTime = entry.value.sumOf { task -> task.duration.toMillis() }
 
-                val items = mutableListOf(mutableListOf<TrackedTask>())
-
-                entry.value.forEachIndexed { index, item ->
-                    if (index == 0 || shouldBeGrouped(entry.value[index - 1], item)) {
-                        items.last().add(item)
-                    } else {
-                        items.add(mutableListOf())
-                        items.last().add(item)
-                    }
-                }
-
                 TrackedDayItem(
                     totalTime = totalTimeFormatter.format(dayTotalTime),
                     title = dateFormatter.format(entry.key),
-                    items = items.map { mapTasksToGroupItems(it) }.toImmutableList()
+                    items = entry.value
+                        .groupBy { it.title to it.description }
+                        .map { mapTasksToGroupItems(it.value) }
+                        .toImmutableList()
                 )
             }.toImmutableList()
     }
@@ -138,9 +130,6 @@ class TrackedTasksComponent(
             throw IllegalArgumentException("tasks argument can't be empty list!")
         }
     }
-
-    private fun shouldBeGrouped(first: TrackedTask, second: TrackedTask) =
-        first.title == second.title && first.description == second.description
 
     data class Args(
         val componentContext: ComponentContext,

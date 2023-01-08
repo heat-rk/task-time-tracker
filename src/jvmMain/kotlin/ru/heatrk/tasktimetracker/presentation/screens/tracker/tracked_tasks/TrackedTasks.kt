@@ -1,10 +1,7 @@
 package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -63,7 +60,7 @@ private fun TrackedTasksOkState(
         contentPadding = contentPadding,
         modifier = modifier
     ) {
-        state.items.forEach { day ->
+        state.items.forEachIndexed { dayIndex, day ->
             item(key = day.title) {
                 TrackedTasksDayHeader(
                     dateTitle = day.title,
@@ -90,6 +87,12 @@ private fun TrackedTasksOkState(
                             onIntent = onIntent
                         )
                     }
+                }
+            }
+
+            if (dayIndex != state.items.lastIndex) {
+                item {
+                    Spacer(modifier = Modifier.height(InsetsDimens.Default))
                 }
             }
         }
@@ -169,7 +172,7 @@ private fun LazyListScope.groupItem(
             key = { _, innerItem ->  innerItem.key },
             contentType = { _, innerItem -> innerItem.contentType }
         ) { innerPosition, innerItem ->
-            val isBottom = if (innerPosition == day.items.lastIndex) {
+            val isBottom = if (position == day.items.lastIndex) {
                 isBottom(
                     items = item.entries,
                     item = innerItem,
