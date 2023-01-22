@@ -14,7 +14,9 @@ val repositoriesModule = DI.Module("repositories") {
     bindProvider<TrackedTasksRepository> {
         TrackedTasksRepositoryImpl(
             database = instance(),
-            ioDispatcher = ioDispatcherInstance()
+            ioDispatcher = ioDispatcherInstance(),
+            trackedTaskDaoToDomainMapper = instance(),
+            trackedTaskDomainToDaoMapper = instance()
         )
     }
 }

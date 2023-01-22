@@ -1,47 +1,41 @@
 package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import ru.heatrk.tasktimetracker.util.CompositeKey
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
-import java.time.LocalDate
 
 sealed interface TrackedTasksListItem {
-    val key: String
+    val id: CompositeKey
     val title: String
-    val duration: String
     val description: ImmutableList<LinksTextValue>
-    val localDate: LocalDate
-    val contentType: String
+    val duration: String
 
     data class Entry(
-        override val key: String,
+        override val id: CompositeKey,
         override val title: String,
-        override val duration: String,
         override val description: ImmutableList<LinksTextValue>,
-        override val localDate: LocalDate
-    ): TrackedTasksListItem {
-        override val contentType = ENTRY_CONTENT_TYPE
-    }
+        override val duration: String
+    ): TrackedTasksListItem
 
     data class Group(
+        override val id: CompositeKey,
         override val title: String,
-        override val duration: String,
         override val description: ImmutableList<LinksTextValue>,
-        override val localDate: LocalDate,
-        val isEntriesShown: Boolean = false,
+        override val duration: String,
         val entries: ImmutableList<Entry>
-    ): TrackedTasksListItem {
-        override val key = localDate.toString() + title + description.toString()
-        override val contentType = GROUP_CONTENT_TYPE
-    }
-
-    companion object {
-        private const val ENTRY_CONTENT_TYPE = "entry_content_type"
-        private const val GROUP_CONTENT_TYPE = "group_content_type"
-    }
+    ): TrackedTasksListItem
 }
 
 data class TrackedDayItem(
     val totalTime: String,
     val title: String,
-    val items: ImmutableList<TrackedTasksListItem>
+    val items: ImmutableList<TrackedTasksListItem> = persistentListOf()
 )
+
+val TrackedTasksListItem.contentType get() =
+    when (this) {
+        is TrackedTasksListItem.Entry -> "entry_content_type"
+        is TrackedTasksListItem.Group -> "group_content_type"
+    }
+

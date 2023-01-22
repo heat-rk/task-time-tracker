@@ -28,9 +28,7 @@ val componentsModule = DI.Module("componentsModule") {
         TrackedTasksComponent.create(
             args = args,
             trackedTasksRepository = instance(),
-            totalTimeFormatter = hhMmSsTimeFormatterInstance(),
-            dateFormatter = dateFormatterInstance(),
-            textToLinkTextConverter = instance(),
+            taskToListItemEntry = instance(),
             defaultDispatcher = defaultDispatcherInstance()
         )
     }

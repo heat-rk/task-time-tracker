@@ -12,10 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import ru.heatrk.tasktimetracker.presentation.values.dimens.InsetsDimens
 import ru.heatrk.tasktimetracker.presentation.values.styles.ApplicationTheme
+import ru.heatrk.tasktimetracker.util.CompositeKey
 import ru.heatrk.tasktimetracker.util.links.LinksTextValue
-import java.time.LocalDate
 
 @Composable
 fun TrackedTasks(
@@ -83,6 +84,7 @@ private fun TrackedTasksOkState(
                         groupItem(
                             day = day,
                             item = task,
+                            isEntriesShown = state.entriesShownFor.contains(task.id),
                             position = taskIndex,
                             onIntent = onIntent
                         )
@@ -130,12 +132,11 @@ private fun LazyListScope.entryItem(
     position: Int,
     onIntent: (TrackedTasksIntent) -> Unit
 ) {
-    item(key =  item.key, contentType = item.contentType) {
+    item(key =  item.id, contentType = item.contentType) {
         TrackedTasksEntry(
             item = item,
             isBottom = isBottom(
                 items = day.items,
-                item = item,
                 position = position
             ),
             onClick = { onIntent(TrackedTasksIntent.OnItemClick(item)) },
@@ -147,35 +148,38 @@ private fun LazyListScope.entryItem(
 private fun LazyListScope.groupItem(
     day: TrackedDayItem,
     item: TrackedTasksListItem.Group,
+    isEntriesShown: Boolean,
     position: Int,
     onIntent: (TrackedTasksIntent) -> Unit
 ) {
-    item(key =  item.key, contentType = item.contentType) {
+    item(key =  item.id, contentType = item.contentType) {
         TrackedTasksGroup(
             item = item,
             counterValue = item.entries.size,
-            isSelected = item.isEntriesShown,
-            isBottom = isBottom(
-                items = day.items,
-                item = item,
-                position = position
-            ),
+            isSelected = isEntriesShown,
+            isBottom = if (isEntriesShown) {
+                isBottom(
+                    items = day.items,
+                    position = position
+                )
+            } else {
+               false
+            },
             onClick = { onIntent(TrackedTasksIntent.OnItemClick(item)) },
             modifier = Modifier.fillMaxWidth()
         )
     }
 
 
-    if (item.isEntriesShown) {
+    if (isEntriesShown) {
         itemsIndexed(
             items = item.entries,
-            key = { _, innerItem ->  innerItem.key },
+            key = { _, innerItem ->  innerItem.id },
             contentType = { _, innerItem -> innerItem.contentType }
         ) { innerPosition, innerItem ->
             val isBottom = if (position == day.items.lastIndex) {
                 isBottom(
                     items = item.entries,
-                    item = innerItem,
                     position = innerPosition
                 )
             } else {
@@ -195,17 +199,9 @@ private fun LazyListScope.groupItem(
 
 private fun isBottom(
     items: List<TrackedTasksListItem>,
-    item: TrackedTasksListItem,
     position: Int
 ): Boolean {
-    var isBottom = position == items.lastIndex ||
-            items[position + 1].localDate != item.localDate
-
-    if (item is TrackedTasksListItem.Group) {
-        isBottom = if (item.isEntriesShown) false else isBottom
-    }
-
-    return isBottom
+    return position == items.lastIndex
 }
 
 @Preview
@@ -225,29 +221,25 @@ private fun TrackedTasksPreview() {
             title = "Сегодня",
             items = persistentListOf(
                 TrackedTasksListItem.Entry(
-                    key = "1",
-                    localDate = LocalDate.now(),
+                    id = CompositeKey(1),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
                 TrackedTasksListItem.Group(
+                    id = CompositeKey(10),
                     title = "MOBPF-130",
-                    localDate = LocalDate.now(),
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
-                    isEntriesShown = true,
                     entries = persistentListOf(
                         TrackedTasksListItem.Entry(
-                            key = "2",
-                            localDate = LocalDate.now(),
+                            id = CompositeKey(2),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
                         TrackedTasksListItem.Entry(
-                            key = "3",
-                            localDate = LocalDate.now(),
+                            id = CompositeKey(3),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -261,28 +253,25 @@ private fun TrackedTasksPreview() {
             title = "Вчера",
             items = persistentListOf(
                 TrackedTasksListItem.Entry(
-                    key = "4",
-                    localDate = LocalDate.now().minusDays(1),
+                    id = CompositeKey(4),
                     title = "MOBPF-128",
                     description = link("https://jira.com/MOBPF-128"),
                     duration = "00:12:36"
                 ),
                 TrackedTasksListItem.Group(
-                    localDate = LocalDate.now().minusDays(1),
+                    id = CompositeKey(11),
                     title = "MOBPF-130",
                     description = link("https://jira.com/MOBPF-130"),
                     duration = "00:16:00",
                     entries = persistentListOf(
                         TrackedTasksListItem.Entry(
-                            key = "5",
-                            localDate = LocalDate.now().minusDays(1),
+                            id = CompositeKey(5),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:09:00"
                         ),
                         TrackedTasksListItem.Entry(
-                            key = "6",
-                            localDate = LocalDate.now().minusDays(1),
+                            id = CompositeKey(6),
                             title = "MOBPF-130",
                             description = link("https://jira.com/MOBPF-130"),
                             duration = "00:07:00"
@@ -295,7 +284,10 @@ private fun TrackedTasksPreview() {
 
     ApplicationTheme {
         TrackedTasks(
-            state = TrackedTasksViewState.Ok(days),
+            state = TrackedTasksViewState.Ok(
+                items = days,
+                entriesShownFor = persistentSetOf(days[0].items[1].id)
+            ),
             onIntent = {},
             modifier = Modifier.fillMaxWidth()
         )

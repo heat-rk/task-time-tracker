@@ -47,3 +47,13 @@ inline fun <reified T: Any> StateFlow<*>.requireValueOfType(): T {
 
     return state
 }
+
+inline fun <reified T: Any> StateFlow<*>.requireValueOfTypeOrNull(): T? {
+    val state = value
+
+    return if (state is T) {
+        state
+    } else {
+        null
+    }
+}

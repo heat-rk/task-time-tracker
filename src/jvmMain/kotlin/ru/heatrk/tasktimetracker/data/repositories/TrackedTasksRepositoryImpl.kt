@@ -8,28 +8,22 @@ import ru.heatrk.tasktimetracker.data.database.tables.TrackedTaskDao
 import ru.heatrk.tasktimetracker.data.database.tables.TrackedTaskTable
 import ru.heatrk.tasktimetracker.domain.models.TrackedTask
 import ru.heatrk.tasktimetracker.domain.repositories.TrackedTasksRepository
-import java.time.*
+import ru.heatrk.tasktimetracker.mappers.TrackedTaskDaoToDomainMapper
+import ru.heatrk.tasktimetracker.mappers.TrackedTaskDomainToDaoMapper
 
 class TrackedTasksRepositoryImpl(
     private val database: Database,
-    private val ioDispatcher: CoroutineDispatcher
+    private val ioDispatcher: CoroutineDispatcher,
+    private val trackedTaskDaoToDomainMapper: TrackedTaskDaoToDomainMapper,
+    private val trackedTaskDomainToDaoMapper: TrackedTaskDomainToDaoMapper,
 ): TrackedTasksRepository {
 
-    override suspend fun addTrackedTask(trackedTask: TrackedTask) {
+    override suspend fun addTrackedTask(trackedTask: TrackedTask) =
         newSuspendedTransaction(context = ioDispatcher, db = database) {
             SchemaUtils.create(TrackedTaskTable)
 
-            TrackedTaskDao.new {
-                title = trackedTask.title
-                description = trackedTask.description
-                duration = trackedTask.duration.seconds
-                startAt = trackedTask.startAt
-                    .atZone(ZoneOffset.systemDefault())
-                    .toInstant()
-                    .epochSecond
-            }
+            trackedTaskDaoToDomainMapper.map(trackedTaskDomainToDaoMapper.map(trackedTask))
         }
-    }
 
     override suspend fun deleteTrackedTasks(ids: List<Int>) {
         newSuspendedTransaction(context = ioDispatcher, db = database) {
@@ -44,16 +38,7 @@ class TrackedTasksRepositoryImpl(
             SchemaUtils.create(TrackedTaskTable)
 
             TrackedTaskDao.all().sortedByDescending { it.startAt }.map {
-                TrackedTask(
-                    id = it.id.value,
-                    title = it.title,
-                    description = it.description,
-                    duration = Duration.ofSeconds(it.duration),
-                    startAt = LocalDateTime.ofInstant(
-                        Instant.ofEpochSecond(it.startAt),
-                        ZoneId.systemDefault()
-                    )
-                )
+                trackedTaskDaoToDomainMapper.map(it)
             }
         }
 }
