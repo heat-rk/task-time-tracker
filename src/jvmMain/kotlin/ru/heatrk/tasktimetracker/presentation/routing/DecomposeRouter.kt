@@ -15,10 +15,8 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
 import org.kodein.di.DI
 import org.kodein.di.instance
+import ru.heatrk.tasktimetracker.presentation.screens.tracker.TrackerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.TrackerScreen
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerComponent
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerComponent
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks.TrackedTasksComponent
 
 class DecomposeRouter(
     componentContext: ComponentContext,
@@ -53,23 +51,11 @@ class DecomposeRouter(
         }
 
     private fun createTracker(componentContext: ComponentContext): @Composable () -> Unit = {
-        val taskTimerComponent by di.instance<TaskTimerComponent.Args, TaskTimerComponent>(
-            arg = TaskTimerComponent.Args(componentContext = componentContext)
+        val trackerComponent by di.instance<TrackerComponent.Args, TrackerComponent>(
+            arg = TrackerComponent.Args(componentContext = componentContext)
         )
 
-        val pomodoroTimerComponent by di.instance<PomodoroTimerComponent.Args, PomodoroTimerComponent>(
-            arg = PomodoroTimerComponent.Args(componentContext = componentContext)
-        )
-
-        val trackedTasksComponent by di.instance<TrackedTasksComponent.Args, TrackedTasksComponent>(
-            arg = TrackedTasksComponent.Args(componentContext = componentContext)
-        )
-
-        TrackerScreen(
-            taskTimerComponent = taskTimerComponent,
-            pomodoroTimerComponent = pomodoroTimerComponent,
-            trackedTasksComponent = trackedTasksComponent
-        )
+        TrackerScreen(trackerComponent = trackerComponent)
     }
 
     private sealed class Config: Parcelable {

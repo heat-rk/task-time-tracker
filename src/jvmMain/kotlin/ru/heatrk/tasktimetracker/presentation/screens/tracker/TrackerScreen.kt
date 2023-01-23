@@ -3,17 +3,14 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimer
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroTimerViewState
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimer
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerComponent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerIntent
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.timer.TaskTimerViewState
 import ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks.*
@@ -24,28 +21,23 @@ import ru.heatrk.tasktimetracker.util.links.LinksTextValue
 
 @Composable
 fun TrackerScreen(
-    taskTimerComponent: TaskTimerComponent,
-    pomodoroTimerComponent: PomodoroTimerComponent,
-    trackedTasksComponent: TrackedTasksComponent
+    trackerComponent: TrackerComponent
 ) {
-    val taskTimerViewState by taskTimerComponent.state.collectAsState()
-    val pomodoroTimerViewState by pomodoroTimerComponent.state.collectAsState()
-    val trackedTasksViewState by trackedTasksComponent.state.collectAsState()
+    val taskTimerViewState by trackerComponent.taskTimerComponent.state
+        .collectAsState()
 
-    LaunchedEffect(Unit) {
-        taskTimerComponent.addStartListener(pomodoroTimerComponent)
-        taskTimerComponent.addStopListener(pomodoroTimerComponent)
-        taskTimerComponent.addTaskStopListener(trackedTasksComponent)
-        pomodoroTimerComponent.addStopListener(taskTimerComponent)
-        pomodoroTimerComponent.addStateChangedListener(taskTimerComponent)
-    }
+    val pomodoroTimerViewState by trackerComponent.pomodoroTimerComponent.state
+        .collectAsState()
+
+    val trackedTasksViewState by trackerComponent.trackedTasksComponent.state
+        .collectAsState()
 
     TrackerScreen(
         taskTimerViewState = taskTimerViewState,
-        onTaskTimerIntent = taskTimerComponent::onIntent,
+        onTaskTimerIntent = trackerComponent.taskTimerComponent::onIntent,
         pomodoroTimerViewState = pomodoroTimerViewState,
         trackedTasksViewState = trackedTasksViewState,
-        onTrackedTasksIntent = trackedTasksComponent::onIntent
+        onTrackedTasksIntent = trackerComponent.trackedTasksComponent::onIntent
     )
 }
 

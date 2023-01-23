@@ -3,15 +3,12 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.timer
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import ru.heatrk.tasktimetracker.domain.models.PomodoroState
 import ru.heatrk.tasktimetracker.domain.models.TrackedTask
 import ru.heatrk.tasktimetracker.presentation.screens.base.Component
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TaskStopListener
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStartListener
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStopListener
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro.PomodoroStateChangedListener
 import ru.heatrk.tasktimetracker.util.tickerFlow
 import ru.heatrk.tasktimetracker.util.time_formatter.millis.MillisecondsFormatter
 import java.time.Duration
@@ -24,12 +21,17 @@ class TaskTimerComponent(
     componentContext: ComponentContext,
     private val timerFormatter: MillisecondsFormatter,
     private val defaultDispatcher: CoroutineDispatcher
-): Component(componentContext), TimerStopListener, PomodoroStateChangedListener {
+): Component(componentContext) {
     private var timerJob: Job? = null
 
-    private val startListeners = mutableSetOf<TimerStartListener>()
-    private val stopListeners = mutableSetOf<TimerStopListener>()
-    private val taskStopListeners = mutableListOf<TaskStopListener>()
+    private val _timerStartEvents = Channel<Unit>(Channel.BUFFERED)
+    val timerStartEvents = _timerStartEvents.receiveAsFlow()
+
+    private val _timerStopEvents = Channel<Unit>(Channel.BUFFERED)
+    val timerStopEvents = _timerStopEvents.receiveAsFlow()
+
+    private val _timerRegisterTaskEvents = Channel<TrackedTask>(Channel.BUFFERED)
+    val timerRegisterTaskEvents = _timerRegisterTaskEvents.receiveAsFlow()
 
     private val passedTimeInMillis = MutableStateFlow(0L).apply {
         onEach { millis ->
@@ -45,6 +47,10 @@ class TaskTimerComponent(
     private val intents = MutableSharedFlow<TaskTimerIntent>().apply {
         onEach { intent ->
             when (intent) {
+                is TaskTimerIntent.OnPomodoroStateChanged -> {
+                    setEnabled(intent.state == PomodoroState.WORKING)
+                }
+
                 is TaskTimerIntent.OnTaskNameChange -> {
                     _state.update { it.copy(taskName = intent.value) }
                 }
@@ -60,39 +66,23 @@ class TaskTimerComponent(
                 TaskTimerIntent.OnStopButtonClick -> {
                     stopTimer()
                 }
+
+                TaskTimerIntent.OnPomodoroWorkingFinished -> {
+                    stopTimer(onlyRegister = true)
+                }
             }
         }.launchIn(componentScope)
-    }
-
-    override fun onStateChanged(state: PomodoroState) {
-        setEnabled(state == PomodoroState.WORKING)
-    }
-
-    override fun onStop() {
-        stopTimer()
     }
 
     fun onIntent(intent: TaskTimerIntent) = componentScope.launch {
         intents.emit(intent)
     }
 
-    fun addStartListener(listener: TimerStartListener) {
-        startListeners.add(listener)
-    }
-
-    fun addStopListener(listener: TimerStopListener) {
-        stopListeners.add(listener)
-    }
-
-    fun addTaskStopListener(listener: TaskStopListener) {
-        taskStopListeners.add(listener)
-    }
-
     private fun setEnabled(isEnabled: Boolean) {
         _state.update { it.copy(isEnabled = isEnabled) }
     }
 
-    private fun startTimer() {
+    private suspend fun startTimer() {
         val millisInSecond = TimeUnit.SECONDS.toMillis(1)
 
         timerJob = tickerFlow(
@@ -104,51 +94,36 @@ class TaskTimerComponent(
 
         _state.update { it.copy(isRunning = true) }
 
-        triggerAllStartListeners()
+        _timerStartEvents.send(Unit)
     }
 
-    private fun stopTimer() {
-        triggerAllTaskStopListeners()
-        timerJob?.cancel()
-        passedTimeInMillis.value = 0
-        _state.update { it.copy(isRunning = false) }
-        triggerAllStopListeners()
-    }
-
-    private fun triggerAllStartListeners() {
-        startListeners.forEach { it.onStart() }
-    }
-
-    private fun triggerAllStopListeners() {
-        stopListeners.forEach { it.onStop() }
-    }
-
-    private fun triggerAllTaskStopListeners() {
+    private suspend fun stopTimer(onlyRegister: Boolean = false) {
         val state = state.value
-        val passedTimeInMillis = passedTimeInMillis.value
+        val passedTimeInMillisValue = passedTimeInMillis.value
 
         val task = TrackedTask(
             title = state.taskName,
             description = state.taskDescription,
-            duration = Duration.ofMillis(passedTimeInMillis),
+            duration = Duration.ofMillis(passedTimeInMillisValue),
             startAt = LocalDateTime.ofInstant(
-                Instant.now().minusMillis(passedTimeInMillis),
+                Instant.now().minusMillis(passedTimeInMillisValue),
                 ZoneId.systemDefault()
             )
         )
 
-        taskStopListeners.forEach { it.onStop(task) }
-    }
+        _timerRegisterTaskEvents.send(task)
 
-    override fun onDestroy() {
-        startListeners.clear()
-        stopListeners.clear()
-        taskStopListeners.clear()
-        super.onDestroy()
+        if (!onlyRegister) {
+            _timerStopEvents.send(Unit)
+        }
+
+        timerJob?.cancel()
+        passedTimeInMillis.value = 0
+        _state.update { it.copy(isRunning = false) }
     }
 
     data class Args(
-        val componentContext: ComponentContext,
+        val componentContext: ComponentContext
     )
 
     companion object {

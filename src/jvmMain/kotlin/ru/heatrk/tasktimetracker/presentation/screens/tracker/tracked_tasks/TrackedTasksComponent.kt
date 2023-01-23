@@ -8,11 +8,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ru.heatrk.tasktimetracker.domain.models.TrackedTask
 import ru.heatrk.tasktimetracker.domain.repositories.TrackedTasksRepository
 import ru.heatrk.tasktimetracker.mappers.TrackedTaskDomainToListItemsMapper
 import ru.heatrk.tasktimetracker.presentation.screens.base.Component
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TaskStopListener
 import ru.heatrk.tasktimetracker.presentation.values.strings.strings
 import ru.heatrk.tasktimetracker.util.requireValueOfType
 import ru.heatrk.tasktimetracker.util.requireValueOfTypeOrNull
@@ -22,7 +20,7 @@ class TrackedTasksComponent(
     private val defaultDispatcher: CoroutineDispatcher,
     private val trackedTasksRepository: TrackedTasksRepository,
     private val taskToListItemEntry: TrackedTaskDomainToListItemsMapper
-): Component(componentContext), TaskStopListener {
+): Component(componentContext) {
 
     private val _state = MutableStateFlow<TrackedTasksViewState>(TrackedTasksViewState.Loading)
     val state = _state.asStateFlow()
@@ -46,24 +44,22 @@ class TrackedTasksComponent(
             is TrackedTasksIntent.OnItemClick -> {
                 onItemClick(intent.item)
             }
-        }
-    }
 
-    override fun onStop(task: TrackedTask) {
-        componentScope.launch {
-            trackedTasksRepository.addTrackedTask(task)
+            is TrackedTasksIntent.OnTaskAdded -> {
+                trackedTasksRepository.addTrackedTask(intent.task)
 
-            val state = state.requireValueOfTypeOrNull<TrackedTasksViewState.Ok>()
+                val state = state.requireValueOfTypeOrNull<TrackedTasksViewState.Ok>()
 
-            if (state != null) {
-                val tasks = trackedTasksRepository.getTrackedTasks()
+                if (state != null) {
+                    val tasks = trackedTasksRepository.getTrackedTasks()
 
-                if (tasks.isNotEmpty()) {
-                    _state.value = state.copy(
-                        items = taskToListItemEntry.daysOf(tasks).toImmutableList()
-                    )
-                } else {
-                    _state.value = TrackedTasksViewState.Error(strings.trackedTasksIsEmpty)
+                    if (tasks.isNotEmpty()) {
+                        _state.value = state.copy(
+                            items = taskToListItemEntry.daysOf(tasks).toImmutableList()
+                        )
+                    } else {
+                        _state.value = TrackedTasksViewState.Error(strings.trackedTasksIsEmpty)
+                    }
                 }
             }
         }

@@ -3,6 +3,7 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.tracked_tasks
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentSetOf
+import ru.heatrk.tasktimetracker.domain.models.TrackedTask
 import ru.heatrk.tasktimetracker.util.CompositeKey
 
 sealed interface TrackedTasksViewState {
@@ -16,4 +17,5 @@ sealed interface TrackedTasksViewState {
 
 sealed interface TrackedTasksIntent {
     data class OnItemClick(val item: TrackedTasksListItem): TrackedTasksIntent
+    data class OnTaskAdded(val task: TrackedTask): TrackedTasksIntent
 }

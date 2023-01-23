@@ -9,6 +9,7 @@ import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import ru.heatrk.tasktimetracker.presentation.values.dimens.ElementsDimens
@@ -76,7 +77,11 @@ fun TaskTimer(
             ) {
                 Icon(
                     painter = buttonPainter,
-                    tint = ApplicationTheme.colors.primary,
+                    tint = if (state.isEnabled) {
+                        ApplicationTheme.colors.primary
+                    } else {
+                        ApplicationTheme.colors.primaryDisabled
+                    },
                     contentDescription = buttonContentDescription
                 )
             }

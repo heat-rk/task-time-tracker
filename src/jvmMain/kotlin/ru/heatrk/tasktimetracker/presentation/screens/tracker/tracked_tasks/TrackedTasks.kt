@@ -158,12 +158,12 @@ private fun LazyListScope.groupItem(
             counterValue = item.entries.size,
             isSelected = isEntriesShown,
             isBottom = if (isEntriesShown) {
+                false
+            } else {
                 isBottom(
                     items = day.items,
                     position = position
                 )
-            } else {
-               false
             },
             onClick = { onIntent(TrackedTasksIntent.OnItemClick(item)) },
             modifier = Modifier.fillMaxWidth()

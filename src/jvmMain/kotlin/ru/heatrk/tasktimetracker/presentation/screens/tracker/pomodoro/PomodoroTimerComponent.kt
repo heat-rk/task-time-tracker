@@ -3,6 +3,7 @@ package ru.heatrk.tasktimetracker.presentation.screens.tracker.pomodoro
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import ru.heatrk.tasktimetracker.domain.models.PomodoroConfig
@@ -10,8 +11,6 @@ import ru.heatrk.tasktimetracker.domain.models.PomodoroState
 import ru.heatrk.tasktimetracker.domain.state_machines.PomodoroStateMachine
 import ru.heatrk.tasktimetracker.domain.usecases.GetPomodoroConfigUseCase
 import ru.heatrk.tasktimetracker.presentation.screens.base.Component
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStartListener
-import ru.heatrk.tasktimetracker.presentation.screens.tracker.TimerStopListener
 import ru.heatrk.tasktimetracker.util.fromToTickerFlow
 import ru.heatrk.tasktimetracker.util.time_formatter.millis.MillisecondsFormatter
 import java.util.concurrent.TimeUnit
@@ -20,7 +19,7 @@ class PomodoroTimerComponent(
     componentContext: ComponentContext,
     private val getPomodoroConfigUseCase: GetPomodoroConfigUseCase,
     private val timerFormatter: MillisecondsFormatter
-): Component(componentContext), TimerStartListener, TimerStopListener {
+): Component(componentContext) {
 
     private var timerJob: Job? = null
 
@@ -30,8 +29,11 @@ class PomodoroTimerComponent(
     private var _pomodoroStateMachine: PomodoroStateMachine? = null
     private val pomodoroStateMachine get() = requireNotNull(_pomodoroStateMachine)
 
-    private val stopListeners = mutableSetOf<TimerStopListener>()
-    private val stateChangedListeners = mutableSetOf<PomodoroStateChangedListener>()
+    private val _pomodoroWorkingFinishedEvents = Channel<Unit>(Channel.BUFFERED)
+    val pomodoroWorkingFinishedEvents = _pomodoroWorkingFinishedEvents.receiveAsFlow()
+
+    private val _pomodoroStateChangedEvents = Channel<PomodoroState>(Channel.BUFFERED)
+    val pomodoroStateChangedEvents = _pomodoroStateChangedEvents.receiveAsFlow()
 
     private var remainingTimeInMillis = 0L
         set(value) {
@@ -61,25 +63,37 @@ class PomodoroTimerComponent(
                     when (state) {
                         PomodoroState.CHILL_SHORT -> {
                             _state.update { it.copy(isChilling = true) }
-                            triggerAllStopListeners()
-                            onStart()
+                            _pomodoroWorkingFinishedEvents.send(Unit)
+                            startTimer()
                         }
                         PomodoroState.CHILL_LONG -> {
                             _state.update { it.copy(isChilling = true) }
-                            triggerAllStopListeners()
-                            onStart()
+                            _pomodoroWorkingFinishedEvents.send(Unit)
+                            startTimer()
                         }
                         PomodoroState.WORKING -> {
                             _state.update { it.copy(isChilling = false) }
                         }
                     }
 
-                    triggerAllStateChangedListeners(state)
+                    _pomodoroStateChangedEvents.send(state)
                 }.launchIn(this)
         }
     }
 
-    override fun onStart() {
+    fun onIntent(intent: PomodoroTimerIntent) = componentScope.launch {
+        when (intent) {
+            PomodoroTimerIntent.OnTimerStart -> {
+                startTimer()
+            }
+
+            PomodoroTimerIntent.OnTimerStop -> {
+                stopTimer()
+            }
+        }
+    }
+
+    private fun startTimer() {
         val secondDelay = TimeUnit.SECONDS.toMillis(1)
 
         timerJob = fromToTickerFlow(
@@ -97,28 +111,12 @@ class PomodoroTimerComponent(
         }.launchIn(componentScope)
     }
 
-    override fun onStop() {
+    private fun stopTimer() {
         timerJob?.cancel()
     }
 
-    fun addStateChangedListener(listener: PomodoroStateChangedListener) {
-        stateChangedListeners.add(listener)
-    }
-
-    fun addStopListener(listener: TimerStopListener) {
-        stopListeners.add(listener)
-    }
-
-    private fun triggerAllStopListeners() {
-        stopListeners.forEach { it.onStop() }
-    }
-
-    private fun triggerAllStateChangedListeners(state: PomodoroState) {
-        stateChangedListeners.forEach { it.onStateChanged(state) }
-    }
-
     data class Args(
-        val componentContext: ComponentContext,
+        val componentContext: ComponentContext
     )
 
     companion object {
