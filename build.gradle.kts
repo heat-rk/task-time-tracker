@@ -5,17 +5,8 @@ plugins {
     id("org.jetbrains.compose")
 }
 
-group = "ru.heatrk"
-version = "1.0-SNAPSHOT"
-
-val kotlinVersion: String by project
-val kodeinVersion: String by project
-val decomposeVersion: String by project
-val sqliteJdbcVersion: String by project
-val exposedVersion: String by project
-val immutableCollectionsVersion: String by project
-val essentyVersion: String by project
-val coroutinesVersion: String by project
+group = AppConfig.group
+version = AppConfig.version
 
 repositories {
     google()
@@ -34,23 +25,18 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
-
-                implementation("org.kodein.di:kodein-di-framework-compose:$kodeinVersion")
-
-                implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
-                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVersion")
-
-                implementation("com.arkivanov.essenty:parcelable:$essentyVersion")
-
-                implementation("org.xerial:sqlite-jdbc:$sqliteJdbcVersion")
-                implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-                implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
-                implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-
-                implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:$immutableCollectionsVersion")
-
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:$coroutinesVersion")
+                implementation(Dependencies.kodein)
+                implementation(Dependencies.decompose)
+                implementation(Dependencies.decomposeExtensions)
+                implementation(Dependencies.sqliteJdbc)
+                implementation(Dependencies.exposedCore)
+                implementation(Dependencies.exposedDao)
+                implementation(Dependencies.exposedJdbc)
+                implementation(Dependencies.immutableCollections)
+                implementation(Dependencies.coroutinesSwing)
             }
+
+            kotlin.srcDir("${buildDir}/generated/src/main/kotlin")
         }
         val jvmTest by getting
     }
@@ -58,11 +44,29 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "MainKt"
+        mainClass = AppConfig.mainClass
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "tasktimetracker"
-            packageVersion = "1.0.0"
+            packageName = AppConfig.packageName
+            packageVersion = AppConfig.version
         }
     }
+}
+
+tasks.register<BuildConfigAssembleTask>("assembleDebugBuildConfig") {
+    config.set(BuildConfig.DEBUG)
+}
+
+tasks.register<BuildConfigAssembleTask>("assembleReleaseBuildConfig") {
+    config.set(BuildConfig.RELEASE)
+}
+
+tasks.register("buildDebug") {
+    dependsOn("assembleDebugBuildConfig")
+    finalizedBy("run")
+}
+
+tasks.register("buildRelease") {
+    dependsOn("assembleReleaseBuildConfig")
+    finalizedBy("run")
 }
